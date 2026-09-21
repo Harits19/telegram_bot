@@ -25,15 +25,15 @@ class TelegramService {
   async sendMessage({
     chatId,
     ...payloadBase
-  }: FlowConfigStep & {
+  }: MessageOutbound & {
+    $expr?: string;
     chatId: string;
   }) {
-    const payload: Partial<FlowConfigStep> = JSON.parse(
+    const payload: Partial<MessageOutbound> = JSON.parse(
       JSON.stringify(payloadBase),
     );
 
-    delete payload.id;
-    delete payload.http;
+    delete payload.$expr;
 
     const logger = this.logger.nested(this.sendMessage);
 

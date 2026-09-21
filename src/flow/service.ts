@@ -1,6 +1,7 @@
+import axios, { AxiosResponse } from "axios";
 import { Logger, logger } from "../config/logger.js";
 import { telegramService } from "../telegram/service.js";
-import { UpdateInbound } from "../telegram/type.js";
+import { MessageOutbound, UpdateInbound } from "../telegram/type.js";
 import {
   FlowConfig,
   FlowConfigStep,
@@ -15,61 +16,74 @@ const configs: FlowConfig[] = [
     steps: [
       {
         id: "greeting",
-        text: "Selamat Datang di 1 Engage Multi Purpose Bot!",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "Menu Utama", callback_data: "ask_wants" }],
-          ],
+        response: {
+          text: "Selamat Datang di Multi Purpose Bot!",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "Menu Utama", callback_data: "ask_wants" }],
+            ],
+          },
         },
       },
 
       {
         id: "ask_wants",
-        text: "Sedang mencari apa?",
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: "Info Cuaca", callback_data: "info_cuaca" },
-              {
-                text: "Info Jadwal Sholat",
-                callback_data: "request_location",
-              },
+        response: {
+          text: "Sedang mencari apa?",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: "Info Cuaca", callback_data: "info_cuaca" },
+                {
+                  text: "Info Jadwal Sholat",
+                  callback_data: "info_jadwal_sholat",
+                },
+              ],
             ],
-          ],
+          },
         },
       },
 
       {
         id: "info_cuaca",
-        text: "Info cuaca di jakarta",
+        response: {
+          text: "Info cuaca di jakarta",
+        },
       },
 
       {
         id: "request_location",
         context: "request_location",
-        text: "Untuk request cuaca, mohon berikan lokasi anda",
-        reply_markup: {
-          keyboard: [
-            [
-              {
-                text: "Kirim Lokasi",
-                request_location: true,
-              },
+        response: {
+          text: "Untuk request cuaca, mohon berikan lokasi anda",
+          reply_markup: {
+            keyboard: [
+              [
+                {
+                  text: "Kirim Lokasi",
+                  request_location: true,
+                },
+              ],
             ],
-          ],
+          },
         },
       },
 
       {
         id: "info_jadwal_sholat",
         http: {
-          context: "info_jadwal_sholat",
+          context: "info_jadwal_sholat_api",
           config: {
             method: "GET",
-            url: "https://api.banghasan.com/sholat/format/json/kota/cari/jakarta",
+            url: "https://api.myquran.com/v3/sholat/jadwal/eda80a3d5b344bc40f3bc04f65b7a357/today?tz=Asia%2FJakarta",
           },
         },
-        text: "Info jadwal sholat di jakarta",
+
+        response: {
+          $expr:
+            "({ text: `Jadwal Sholat Hari Ini \\n${context.info_jadwal_sholat_api.data.data.prov} \\n${Object.entries(Object.values(context.info_jadwal_sholat_api.data.data.jadwal)[0]).map(([key, value]) => `${key.toUpperCase()} : ${value}`).join('\\n')}` })",
+          text: "-",
+        },
       },
     ],
   },
@@ -171,6 +185,57 @@ class FlowService {
     });
   }
 
+  async handleHTTP({
+    step,
+    session,
+  }: {
+    step: FlowConfigStep;
+    session: FlowSession;
+  }) {
+    const logger = this.logger.nested(this.handleHTTP);
+    let response: AxiosResponse | undefined = undefined;
+    const http = step.http;
+    const context = http?.context;
+
+    try {
+      if (!http) return;
+      response = await axios(http.config);
+      logger.info(
+        `success called http with response ${JSON.stringify(response?.data, null, 2)}`,
+      );
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        response = error.response?.data;
+        logger.error(
+          `error while calling http ${JSON.stringify(error, null, 2)}`,
+        );
+      } else {
+        logger.error(`Error ${error?.stack || "Unexpected error"}`);
+      }
+    }
+    if (response && context) {
+      session.context[context] = {
+        status: response.status,
+        data: response.data,
+      };
+    }
+  }
+
+  handleExpr({
+    step,
+    session,
+  }: {
+    step: FlowConfigStep;
+    session: FlowSession;
+  }) {
+    const expr = step.response.$expr;
+
+    if (!expr) return step.response;
+    const context = session.context;
+    const response = eval(expr);
+    return response as MessageOutbound;
+  }
+
   async sendOutbound({
     identifier,
     step,
@@ -180,9 +245,12 @@ class FlowService {
     step: FlowConfigStep;
     session: FlowSession;
   }) {
+    await this.handleHTTP({ step, session });
+    const response = this.handleExpr({ session, step });
+
     const result = await telegramService.sendMessage({
       chatId: identifier,
-      ...step,
+      ...response,
     });
     const messageId = result.body.result.message_id;
     const outbound: OutboundConversation = {
@@ -227,3 +295,28 @@ class FlowService {
 }
 
 export const flowService = new FlowService();
+
+const response = {
+  status: true,
+  message: "success",
+  data: {
+    id: "eda80a3d5b344bc40f3bc04f65b7a357",
+    kabko: "KOTA KEDIRI",
+    prov: "JAWA TIMUR",
+    jadwal: {
+      "2026-09-21": {
+        tanggal: "Senin, 21/09/2026",
+        imsak: "03:57",
+        subuh: "04:07",
+        terbit: "05:19",
+        dhuha: "05:46",
+        dzuhur: "11:29",
+        ashar: "14:41",
+        maghrib: "17:31",
+        isya: "18:40",
+      },
+    },
+  },
+};
+
+

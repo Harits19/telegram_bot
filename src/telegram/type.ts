@@ -6,6 +6,7 @@ export type Button = {
 };
 
 export interface MessageOutbound {
+  $expr?: string;
   text: string;
   reply_markup?: {
     keyboard?: Button[][];

@@ -23,8 +23,9 @@ export interface FlowConfig {
   steps: FlowConfigStep[];
 }
 
-export interface FlowConfigStep extends MessageOutbound {
+export interface FlowConfigStep {
   id: string;
   http?: { context?: string; config: AxiosRequestConfig };
   context?: string;
+  response: MessageOutbound;
 }
