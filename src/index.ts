@@ -1,4 +1,6 @@
+import { Logger } from "./config/logger.js";
 import { flowService } from "./flow/service.js";
+import { telegramService } from "./telegram/service.js";
 import { UpdateInbound } from "./telegram/type.js";
 
 // Default di kode; bisa ditimpa dari .env.
@@ -23,18 +25,15 @@ async function telegram(method: string, payload: Record<string, unknown>) {
   return { status: response.status, body: (await response.json()) as any };
 }
 
-/** Baris-baris tombol; satu baris = satu array. */
-
-// Terima pesan: tarik update dari Telegram terus-menerus, lalu balas pantul.
 let offset = 0;
 
 async function poll(): Promise<void> {
+  const logger = new Logger(poll);
+
   while (true) {
     try {
-      const { body } = await telegram("getUpdates", { offset, timeout: 30 });
-      const updates: UpdateInbound[] = body?.result ?? [];
+      const updates = await telegramService.getUpdates(offset);
 
-      // Tanpa jeda, jawaban kosong yang cepat membuat loop berputar tanpa henti.
       if (updates.length === 0) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         continue;
@@ -44,34 +43,8 @@ async function poll(): Promise<void> {
         offset = update.update_id + 1;
         flowService.digest(update);
       }
-
-      // for (const update of updates) {
-      //   offset = update.update_id + 1;
-
-      //   // Tombol ditekan: wajib dijawab, kalau tidak spinner di HP nyangkut.
-      //   const query = update.callback_query;
-      //   if (query !== undefined) {
-      //     console.log(
-      //       `tombol ditekan di ${query.message?.chat?.id}: ${query.data}`,
-      //     );
-      //     await telegram("answerCallbackQuery", {
-      //       callback_query_id: query.id,
-      //       text: `kamu tekan: ${query.data ?? "-"}`,
-      //     });
-      //     continue;
-      //   }
-
-      //   const chatId = update.message?.chat?.id;
-      //   const text = update.message?.text;
-      //   if (chatId === undefined || typeof text !== "string") continue;
-
-      //   console.log(`pesan masuk dari ${chatId}: ${text}`);
-      //   // await sendMessage(chatId, `kamu bilang: ${text}`, [
-      //   //   [{ text: 'OK', callback_data: 'ok' }],
-      //   // ]);
-      // }
     } catch (error) {
-      console.error("gagal ambil update:", (error as Error).message);
+      logger.error("error", error);
       await new Promise((resolve) => setTimeout(resolve, 3000));
     }
   }

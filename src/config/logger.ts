@@ -32,7 +32,7 @@ export class Logger {
     console.info(`${this.prefix} ${message}`);
   }
 
-  error(message: string) {
+  error(message?: any, ...optionalParams: any[]) {
     console.error(`${this.prefix} ${message}`);
   }
 

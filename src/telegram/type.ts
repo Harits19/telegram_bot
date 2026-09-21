@@ -1,9 +1,15 @@
-export type Button = { text: string; callback_data?: string; url?: string };
+export type Button = {
+  text: string;
+  callback_data?: string;
+  url?: string;
+  request_location?: boolean;
+};
 
 export interface MessageOutbound {
   text: string;
   reply_markup?: {
-    inline_keyboard: Button[][];
+    keyboard?: Button[][];
+    inline_keyboard?: Button[][];
   };
 }
 
@@ -45,6 +51,10 @@ export interface MessageInbound {
   entities?: MessageEntityInbound[];
   message_thread_id?: number;
   reply_to_message?: MessageInbound;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export interface CallbackQueryInbound {
@@ -62,4 +72,14 @@ export interface UpdateInbound {
   channel_post?: MessageInbound;
   edited_channel_post?: MessageInbound;
   callback_query?: CallbackQueryInbound;
+}
+
+export interface SendMessageResponse {
+  status: number;
+  body: {
+    ok: boolean;
+    result: {
+      message_id: number;
+    };
+  };
 }

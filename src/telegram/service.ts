@@ -1,4 +1,11 @@
-import { Button, MessageOutbound } from "./type.js";
+import { Logger } from "../config/logger.js";
+import { FlowConfigStep } from "../flow/type.js";
+import {
+  Button,
+  MessageOutbound,
+  SendMessageResponse,
+  UpdateInbound,
+} from "./type.js";
 
 class TelegramService {
   async telegram(method: string, payload: Record<string, unknown>) {
@@ -13,18 +20,37 @@ class TelegramService {
     return { status: response.status, body: (await response.json()) as any };
   }
 
-  sendMessage({
+  logger = new Logger(TelegramService);
+
+  async sendMessage({
     chatId,
-    text,
-    reply_markup,
-  }: MessageOutbound & {
+    ...payloadBase
+  }: FlowConfigStep & {
     chatId: string;
   }) {
-    return this.telegram("sendMessage", {
+    const payload: Partial<FlowConfigStep> = JSON.parse(
+      JSON.stringify(payloadBase),
+    );
+
+    delete payload.id;
+    delete payload.http;
+
+    const logger = this.logger.nested(this.sendMessage);
+
+    logger.info(
+      `try to send message with payload ${JSON.stringify(payload, null, 2)}`,
+    );
+
+    const result = await this.telegram("sendMessage", {
       chat_id: chatId,
-      text,
-      reply_markup,
+      ...payload,
     });
+
+    logger.info(
+      `success send message response ${JSON.stringify(result, null, 2)}`,
+    );
+
+    return result as SendMessageResponse;
   }
 
   async answerCallbackQuery({
@@ -35,6 +61,12 @@ class TelegramService {
     await this.telegram("answerCallbackQuery", {
       callback_query_id,
     });
+  }
+
+  async getUpdates(offset: number) {
+    const { body } = await this.telegram("getUpdates", { offset, timeout: 30 });
+    const updates: UpdateInbound[] = body?.result ?? [];
+    return updates;
   }
 }
 

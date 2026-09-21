@@ -1,7 +1,12 @@
 import { Logger, logger } from "../config/logger.js";
 import { telegramService } from "../telegram/service.js";
 import { UpdateInbound } from "../telegram/type.js";
-import { FlowConfig, FlowSession } from "./type.js";
+import {
+  FlowConfig,
+  FlowConfigStep,
+  FlowSession,
+  OutboundConversation,
+} from "./type.js";
 const sessions: Record<string, FlowSession> = {};
 const configs: FlowConfig[] = [
   {
@@ -10,9 +15,11 @@ const configs: FlowConfig[] = [
     steps: [
       {
         id: "greeting",
-        text: "Halo Kembali",
+        text: "Selamat Datang di 1 Engage Multi Purpose Bot!",
         reply_markup: {
-          inline_keyboard: [[{ text: "Next", callback_data: "ask_wants" }]],
+          inline_keyboard: [
+            [{ text: "Menu Utama", callback_data: "ask_wants" }],
+          ],
         },
       },
 
@@ -23,7 +30,10 @@ const configs: FlowConfig[] = [
           inline_keyboard: [
             [
               { text: "Info Cuaca", callback_data: "info_cuaca" },
-              { text: "Info Jadwal Sholat", callback_data: "info_waktu" },
+              {
+                text: "Info Jadwal Sholat",
+                callback_data: "request_location",
+              },
             ],
           ],
         },
@@ -35,7 +45,30 @@ const configs: FlowConfig[] = [
       },
 
       {
-        id: "info_waktu",
+        id: "request_location",
+        context: "request_location",
+        text: "Untuk request cuaca, mohon berikan lokasi anda",
+        reply_markup: {
+          keyboard: [
+            [
+              {
+                text: "Kirim Lokasi",
+                request_location: true,
+              },
+            ],
+          ],
+        },
+      },
+
+      {
+        id: "info_jadwal_sholat",
+        http: {
+          context: "info_jadwal_sholat",
+          config: {
+            method: "GET",
+            url: "https://api.banghasan.com/sholat/format/json/kota/cari/jakarta",
+          },
+        },
         text: "Info jadwal sholat di jakarta",
       },
     ],
@@ -71,6 +104,31 @@ class FlowService {
     }
   }
 
+  async saveToContext({
+    session,
+    update,
+  }: {
+    update: UpdateInbound;
+    session: FlowSession;
+  }) {
+    const messageId = update.message?.reply_to_message?.message_id;
+
+    if (messageId) {
+      const conversation = session.conversation.find(
+        (item) =>
+          item.type === "outbound" && item.payload.message_id === messageId,
+      );
+
+      if (conversation) {
+        const context = (conversation.payload as OutboundConversation).context;
+
+        if (context) {
+          session.context[context] = update;
+        }
+      }
+    }
+  }
+
   async handleCurrentSession(update: UpdateInbound, session: FlowSession) {
     const identifier = this.getChatId(update)!;
 
@@ -89,6 +147,8 @@ class FlowService {
       });
     }
 
+    this.saveToContext({ session, update });
+
     const nextStep = update.callback_query?.data;
 
     if (!nextStep) {
@@ -104,12 +164,33 @@ class FlowService {
     }
     session.conversation.push({ type: "inbound", payload: update });
 
-    await telegramService.sendMessage({
+    await this.sendOutbound({
+      identifier,
+      step,
+      session,
+    });
+  }
+
+  async sendOutbound({
+    identifier,
+    step,
+    session,
+  }: {
+    identifier: string;
+    step: FlowConfigStep;
+    session: FlowSession;
+  }) {
+    const result = await telegramService.sendMessage({
       chatId: identifier,
       ...step,
     });
+    const messageId = result.body.result.message_id;
+    const outbound: OutboundConversation = {
+      ...step,
+      message_id: messageId,
+    };
 
-    session.conversation.push({ type: "outbound", payload: step });
+    session.conversation.push({ type: "outbound", payload: outbound });
     sessions[identifier] = session;
   }
 
@@ -141,14 +222,7 @@ class FlowService {
 
     newSession.conversation.push({ type: "inbound", payload: update });
 
-    await telegramService.sendMessage({
-      chatId: identifier,
-      ...step,
-    });
-
-    newSession.conversation.push({ type: "outbound", payload: step });
-
-    sessions[identifier] = newSession;
+    await this.sendOutbound({ identifier, step, session: newSession });
   }
 }
 
