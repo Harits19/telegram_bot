@@ -1,10 +1,19 @@
 # Telegram Bot Service (Express)
 
-Service kecil: satu endpoint untuk kirim pesan, satu loop untuk terima pesan.
+Satu file: `src/index.ts`. Endpoint untuk kirim pesan, loop untuk terima pesan.
+
+Buat `.env` berisi token dari @BotFather:
+
+    TELEGRAM_BOT_TOKEN=123456:ABC...
+
+Lalu:
 
     npm install
-    cp .env.example .env     # isi TELEGRAM_BOT_TOKEN dari @BotFather
-    npm run dev
+    npm start
+
+Token dibaca dari `.env` (tsx memuatnya otomatis). `API_BASE` dan `PORT` punya
+default di kode; kalau perlu diubah, ubah `process.env.API_BASE` / `PORT` di
+`.env` atau langsung di baris atas `src/index.ts`.
 
 ## Kirim pesan
 
@@ -12,15 +21,31 @@ Service kecil: satu endpoint untuk kirim pesan, satu loop untuk terima pesan.
       -H 'content-type: application/json' \
       -d '{"chat_id": 123456789, "text": "halo"}'
 
-`chat_id` bisa angka atau `@username`. Responsnya body asli dari Telegram
-(`{"ok":true,"result":{...}}`), jadi kalau Telegram menolak, status dan pesannya
+Dengan tombol (`buttons`: array baris, satu baris satu array):
+
+    curl -X POST http://localhost:3000/send \
+      -H 'content-type: application/json' \
+      -d '{"chat_id": 123456789, "text": "Pilih menu",
+           "buttons": [
+             [{"text": "Ya", "callback_data": "yes"}, {"text": "Tidak", "callback_data": "no"}],
+             [{"text": "Buka web", "url": "https://example.com"}]
+           ]}'
+
+Tiap tombol isi `callback_data` (dikirim balik ke bot) atau `url`.
+`chat_id` bisa angka atau `@username`. Respons adalah body asli Telegram
+(`{"ok":true,"result":{...}}`); kalau Telegram menolak, status dan pesannya
 diteruskan apa adanya.
 
 ## Terima pesan
 
-Loop `getUpdates` di `src/index.ts` menarik pesan masuk dan membalas pantul
-(`kamu bilang: ...`). Kalau bot baru dibuat, kirim dulu pesan apa saja ke bot di
-Telegram supaya bot boleh membalas, lalu chat ID-nya muncul di log.
+Loop `getUpdates` menarik update masuk, membalas pantul (`kamu bilang: ...`)
+dengan satu tombol OK, lalu menjawab setiap penekanan tombol lewat
+`answerCallbackQuery` (tanpa ini spinner di HP nyangkut).
 
-Catatan: loop ini pakai long polling. Kalau nanti bot di-set webhook, Telegram
-menolak `getUpdates`, jadi pilih salah satu.
+Kalau bot baru dibuat, kirim dulu pesan apa saja ke bot di Telegram supaya bot
+boleh membalas; chat ID-nya muncul di log.
+
+Catatan: loop ini long polling. Kalau bot di-set webhook, Telegram menolak
+`getUpdates`, jadi pilih salah satu.
+
+`.env` sudah masuk `.gitignore`, jadi token tidak ikut ter-commit.
