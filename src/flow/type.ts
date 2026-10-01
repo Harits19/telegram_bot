@@ -7,15 +7,7 @@ export interface OutboundConversation extends FlowConfigStep {
 
 export interface InboundConversation extends UpdateInbound {}
 
-export interface FlowSession {
-  flowId: string;
-  identifier?: string;
-  context: Record<string, unknown>;
-  conversation: (
-    | { type: "outbound"; payload: OutboundConversation }
-    | { type: "inbound"; payload: InboundConversation }
-  )[];
-}
+
 
 export interface FlowConfig {
   id: string;
