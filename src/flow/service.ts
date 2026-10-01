@@ -38,12 +38,28 @@ const configs: FlowConfig[] = [
                   text: "Info Jadwal Sholat",
                   callback_data: "info_jadwal_sholat",
                 },
+                {
+                  text: "Send Photo",
+                  callback_data: "send_photo",
+                },
               ],
             ],
           },
         },
       },
-
+      {
+        id: "send_photo",
+        response: {
+          photo:
+            "https://images.unsplash.com/photo-1575936123452-b67c3203c357?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80", // dummy image
+          caption: "Pesan dengan photo",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "Menu Utama", callback_data: "ask_wants" }],
+            ],
+          },
+        },
+      },
       {
         id: "info_cuaca",
         response: {
@@ -318,5 +334,3 @@ const response = {
     },
   },
 };
-
-

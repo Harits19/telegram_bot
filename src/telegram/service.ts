@@ -3,6 +3,7 @@ import { FlowConfigStep } from "../flow/type.js";
 import {
   Button,
   MessageOutbound,
+  MessageOutboundRequest,
   SendMessageResponse,
   UpdateInbound,
 } from "./type.js";
@@ -22,14 +23,8 @@ class TelegramService {
 
   logger = new Logger(TelegramService);
 
-  async sendMessage({
-    chatId,
-    ...payloadBase
-  }: MessageOutbound & {
-    $expr?: string;
-    chatId: string;
-  }) {
-    const payload: Partial<MessageOutbound> = JSON.parse(
+  async sendMessage(payloadBase: MessageOutboundRequest) {
+    const payload: Partial<MessageOutboundRequest> = JSON.parse(
       JSON.stringify(payloadBase),
     );
 
@@ -41,8 +36,10 @@ class TelegramService {
       `try to send message with payload ${JSON.stringify(payload, null, 2)}`,
     );
 
-    const result = await this.telegram("sendMessage", {
-      chat_id: chatId,
+    const path = this.getPath(payloadBase);
+
+    const result = await this.telegram(path, {
+      chat_id: payload.chatId,
       ...payload,
     });
 
@@ -67,6 +64,16 @@ class TelegramService {
     const { body } = await this.telegram("getUpdates", { offset, timeout: 30 });
     const updates: UpdateInbound[] = body?.result ?? [];
     return updates;
+  }
+
+  getPath(payload: MessageOutboundRequest) {
+    if (payload.photo) {
+      return "sendPhoto";
+    } else if (payload.text) {
+      return "sendMessage";
+    }
+
+    throw new Error("Invalid payload");
   }
 }
 

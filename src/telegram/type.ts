@@ -7,11 +7,18 @@ export type Button = {
 
 export interface MessageOutbound {
   $expr?: string;
-  text: string;
+  text?: string;
+  photo?: string;
+  caption?: string;
   reply_markup?: {
     keyboard?: Button[][];
     inline_keyboard?: Button[][];
   };
+}
+
+export interface MessageOutboundRequest extends MessageOutbound {
+  $expr?: string;
+  chatId: string;
 }
 
 // --- pesan masuk ---
