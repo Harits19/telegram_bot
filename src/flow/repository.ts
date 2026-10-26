@@ -24,7 +24,7 @@ const configs: FlowConfig[] = [
           reply_markup: {
             inline_keyboard: [
               [
-                { text: "Info Cuaca", callback_data: "info_cuaca" },
+                { text: "Info Cuaca", callback_data: "request_location" },
                 {
                   text: "Info Jadwal Sholat",
                   callback_data: "info_jadwal_sholat",
@@ -63,6 +63,7 @@ const configs: FlowConfig[] = [
         context: "request_location",
         response: {
           text: "Untuk request cuaca, mohon berikan lokasi anda",
+          next_step: "info_cuaca",
           reply_markup: {
             keyboard: [
               [

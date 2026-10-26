@@ -82,23 +82,50 @@ class FlowService {
     this.saveToContext({ session, update });
 
     const nextStep = update.callback_query?.data;
-
-    if (!nextStep) {
-      logger.info(`Next step from callback query not found`);
-      return;
-    }
-
-    const step = flow.steps.find((item) => item.id === nextStep);
-
-    if (!step) {
-      logger.info(`Step with id ${nextStep} not found`);
-      return;
-    }
+    const replyId = update.message?.reply_to_message?.message_id;
     session.conversation.push({ type: "inbound", payload: update });
+
+    let targetStep: FlowConfigStep | undefined = undefined;
+
+    if (nextStep) {
+      targetStep = flow.steps.find((item) => item.id === nextStep);
+
+      if (!targetStep) {
+        logger.info(`Step with id ${nextStep} not found`);
+      }
+    } else if (replyId) {
+      const step = session.conversation.find(
+        (item) =>
+          item.type === "outbound" && item.payload.message_id === replyId,
+      );
+
+      if (!step) {
+        logger.info(`step outbound with id ${replyId} not found`);
+        return;
+      }
+      const nextStepId = (step.payload as OutboundConversation).response
+        .next_step;
+
+      if (!nextStepId) {
+        logger.info(`next step id not found on outbound `);
+        return;
+      }
+
+      targetStep = flow.steps.find((item) => item.id === nextStepId);
+
+      if (!targetStep) {
+        logger.info(`next step id ${nextStepId} not found on flow`);
+      }
+    }
+
+    if (!targetStep) {
+      logger.info(`target step not found, end`);
+      return;
+    }
 
     await this.sendOutbound({
       identifier,
-      step,
+      step: targetStep,
       session,
     });
   }

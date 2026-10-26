@@ -10,6 +10,7 @@ export interface MessageOutbound {
   text?: string;
   photo?: string;
   caption?: string;
+  next_step?: string;
   reply_markup?: {
     keyboard?: Button[][];
     inline_keyboard?: Button[][];
