@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { Logger, logger } from "../config/logger.js";
 import { telegramService } from "../telegram/service.js";
 import { MessageOutbound, UpdateInbound } from "../telegram/type.js";
@@ -144,7 +144,16 @@ class FlowService {
 
     try {
       if (!http) return;
-      response = await axios(http.config);
+      let { $expr, ...config } = http.config;
+      if ($expr) {
+        const exprConfig = this.handleHTTPConfigExpr({ $expr, session });
+        config = {
+          ...config,
+          ...exprConfig,
+        };
+      }
+
+      response = await axios(config);
       logger.info(
         `success called http with response ${JSON.stringify(response?.data, null, 2)}`,
       );
@@ -166,13 +175,31 @@ class FlowService {
     }
   }
 
-  handleExpr({ step, session }: { step: FlowConfigStep; session: Session }) {
+  handleResponseExpr({
+    step,
+    session,
+  }: {
+    step: FlowConfigStep;
+    session: Session;
+  }) {
     const expr = step.response.$expr;
 
     if (!expr) return step.response;
     const context = session.context;
     const response = eval(expr);
     return response as MessageOutbound;
+  }
+
+  handleHTTPConfigExpr({
+    $expr,
+    session,
+  }: {
+    $expr: string;
+    session: Session;
+  }) {
+    const context = session.context;
+
+    return eval($expr) as AxiosRequestConfig;
   }
 
   async sendOutbound({
@@ -185,7 +212,7 @@ class FlowService {
     session: Session;
   }) {
     await this.handleHTTP({ step, session });
-    const response = this.handleExpr({ session, step });
+    const response = this.handleResponseExpr({ session, step });
 
     const result = await telegramService.sendMessage({
       chatId: identifier,
@@ -203,8 +230,13 @@ class FlowService {
   }
 
   async handleNewSession(update: UpdateInbound) {
-    const identifier = update.message!.chat!.id!.toString();
+    const identifier = update.message?.chat?.id?.toString();
     const text = update.message?.text;
+
+    if (!identifier) {
+      logger.info(`Identifier not found`);
+      return;
+    }
 
     if (!text) {
       logger.info(`Empty text`);

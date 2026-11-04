@@ -53,8 +53,18 @@ const configs: FlowConfig[] = [
       },
       {
         id: "info_cuaca",
+        http: {
+          context: "info_cuaca_api",
+          config: {
+            $expr:
+              "({ url: `https://api.open-meteo.com/v1/forecast?latitude=${context.request_location.message.location.latitude}&longitude=${context.request_location.message.location.longitude}&hourly=weather_code&timezone=Asia%2FJakarta&forecast_days=1`})",
+            method: "GET",
+          },
+        },
         response: {
-          text: "Info cuaca di jakarta",
+          $expr:
+            "({ text: `Prakiraan Cuaca Harian\nTanggal: ${context.info_cuaca_api.data.hourly.time[0].split('T')[0]}\nLokasi: ${context.info_cuaca_api.data.latitude}, ${context.info_cuaca_api.data.longitude}\nZona Waktu: ${context.info_cuaca_api.data.timezone}\n\nPrakiraan Cuaca Per Jam:\n${context.info_cuaca_api.data.hourly.time.map((time, index) => { const weatherCodes = { 0: 'Cerah', 1: 'Cerah sebagian', 2: 'Cerah berawan', 3: 'Berawan', 45: 'Berkabut', 48: 'Berkabut tebal', 51: 'Gerimis ringan', 53: 'Gerimis sedang', 55: 'Gerimis lebat', 56: 'Gerimis beku ringan', 57: 'Gerimis beku lebat', 61: 'Hujan ringan', 63: 'Hujan sedang', 65: 'Hujan lebat', 66: 'Hujan beku ringan', 67: 'Hujan beku lebat', 71: 'Salju ringan', 73: 'Salju sedang', 75: 'Salju lebat', 77: 'Butiran salju', 80: 'Hujan lokal ringan', 81: 'Hujan lokal sedang', 82: 'Hujan lokal lebat', 85: 'Hujan salju ringan', 86: 'Hujan salju lebat', 95: 'Badai petir', 96: 'Badai petir disertai hujan es', 99: 'Badai petir disertai hujan es lebat' }; return time.split('T')[1] + ' WIB: ' + (weatherCodes[context.info_cuaca_api.data.hourly.weather_code[index]] || 'Tidak diketahui'); }).join('\\n')}` })",
+          text: "-",
         },
       },
 

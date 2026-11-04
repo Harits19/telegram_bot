@@ -7,8 +7,6 @@ export interface OutboundConversation extends FlowConfigStep {
 
 export interface InboundConversation extends UpdateInbound {}
 
-
-
 export interface FlowConfig {
   id: string;
   trigger: string[];
@@ -17,7 +15,12 @@ export interface FlowConfig {
 
 export interface FlowConfigStep {
   id: string;
-  http?: { context?: string; config: AxiosRequestConfig };
+  http?: {
+    context?: string;
+    config: AxiosRequestConfig & {
+      $expr?: string;
+    };
+  };
   context?: string;
   response: MessageOutbound;
 }
