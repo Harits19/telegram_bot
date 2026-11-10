@@ -49,3 +49,29 @@ Catatan: loop ini long polling. Kalau bot di-set webhook, Telegram menolak
 `getUpdates`, jadi pilih salah satu.
 
 `.env` sudah masuk `.gitignore`, jadi token tidak ikut ter-commit.
+
+## MongoDB (Docker)
+
+Database lokal jalan lewat `docker-compose.yml` (image `mongo:7`, data disimpan
+di volume `mongodb_data`).
+
+    npm run db:up      # nyalakan, tunggu sampai healthy
+    npm run db:down    # matikan (data tetap ada)
+
+Variabel yang dipakai (lihat `.env.example`):
+
+    MONGO_PORT=27017
+    MONGO_ROOT_USERNAME=admin
+    MONGO_ROOT_PASSWORD=admin123
+    MONGO_DATABASE=telegram_bot
+
+Koneksi dibentuk di `src/mongodb/service.ts` dari variabel di atas, atau timpa
+langsung dengan `MONGODB_URI` (mis. `mongodb+srv://...` milik Atlas). `npm start`
+memanggil `mongoDB.connect()` dulu; kalau database tidak bisa dihubungi, proses
+berhenti dengan error, bukan diam-diam jalan tanpa DB.
+
+Cek isi database dari terminal:
+
+    docker exec -it telegram-bot-mongodb mongosh -u admin -p admin123 \
+      --authenticationDatabase admin telegram_bot --eval 'db.getCollectionNames()'
+

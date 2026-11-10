@@ -1,5 +1,6 @@
 import { AxiosRequestConfig } from "axios";
 import { MessageOutbound, UpdateInbound } from "../telegram/type.js";
+import { model, ObjectId, Schema } from "mongoose";
 
 export interface OutboundConversation extends FlowConfigStep {
   message_id: number;

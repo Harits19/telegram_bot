@@ -1,8 +1,9 @@
 import { FlowConfig } from "./type.js";
+import mongoose from "mongoose";
 
 const configs: FlowConfig[] = [
   {
-    id: "id-123",
+    id: "123",
     trigger: ["halo", "hi"],
     steps: [
       {

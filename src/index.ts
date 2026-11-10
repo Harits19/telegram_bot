@@ -1,5 +1,6 @@
 import { Logger } from "./config/logger.js";
 import { flowService } from "./flow/service.js";
+import { mongoDB } from "./mongodb/service.js";
 import { telegramService } from "./telegram/service.js";
 import { UpdateInbound } from "./telegram/type.js";
 
@@ -50,4 +51,9 @@ async function poll(): Promise<void> {
   }
 }
 
-void poll();
+async function main(): Promise<void> {
+  await mongoDB.connect();
+  await poll();
+}
+
+void main();
