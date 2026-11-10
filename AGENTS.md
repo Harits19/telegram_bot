@@ -7,7 +7,8 @@ Berlaku untuk semua agent, subagent, dan sesi yang bekerja di folder ini.
 - Semua komentar kode ditulis dalam bahasa Inggris: `//`, `/* */`, JSDoc, komentar YAML dan `.env`, Dockerfile, dan shell. Termasuk komentar TODO dan label satu kata.
 - Boleh menulis komentar Inggris walau percakapan, commit message, atau instruksi user berbahasa Indonesia.
 - README dan dokumen prosa tetap bahasa Indonesia.
-- String runtime bukan komentar: pesan log, pesan error, dan teks balasan bot mengikuti bahasa yang sudah dipakai project (Indonesia).
+- Pesan yang dibaca developer juga Inggris: `throw new Error(...)`, log/warn/debug, output CLI, dan pesan validasi. Contoh: `"MONGODB_URI is empty: set it in .env"`.
+- Copy produk bukan bagian aturan ini: balasan bot, label UI, dan teks yang dibaca end user tetap bahasa Indonesia.
 - Kalau mengedit file yang komentarnya masih Indonesia, terjemahkan seluruh komentar di file itu, jangan separuh.
 - Cek sebelum selesai: komentar yang baru ditulis harus Inggris.
 

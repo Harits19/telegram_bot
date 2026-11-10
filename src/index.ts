@@ -11,7 +11,7 @@ const API_BASE = process.env.API_BASE ?? "https://api.telegram.org";
 
 if (TOKEN === "") {
   console.warn(
-    "TELEGRAM_BOT_TOKEN kosong: isi di .env (lihat contoh di README)",
+    "TELEGRAM_BOT_TOKEN is empty: set it in .env (see the example in README)",
   );
 }
 

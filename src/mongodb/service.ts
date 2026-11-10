@@ -12,13 +12,13 @@ class MongoDB {
 
     if (!MONGODB_URI) {
       throw new Error(
-        "MONGODB_URI kosong: isi di .env (lihat contoh di .env.example)",
+        "MONGODB_URI is empty: set it in .env (see the example in .env.example)",
       );
     }
 
     // Hot reload must not open a second connection.
     if (mongoose.connection.readyState !== 0) {
-      logger.info(`database "${mongoose.connection.name}" sudah tersambung`);
+      logger.info(`database "${mongoose.connection.name}" is already connected`);
       return;
     }
 
@@ -26,10 +26,10 @@ class MongoDB {
       await mongoose.connect(MONGODB_URI, {
         serverSelectionTimeoutMS: 5000,
       });
-      logger.info(`tersambung ke database "${mongoose.connection.name}"`);
+      logger.info(`connected to database "${mongoose.connection.name}"`);
     } catch (error) {
       // Without a database the service cannot run, so the caller gets the error.
-      logger.error("gagal tersambung", error);
+      logger.error("connection failed", error);
       throw error;
     }
   }
