@@ -20,14 +20,8 @@ export function cloneFlow(flow: FlowConfig): FlowConfig {
 }
 
 /** Problems that block saving. Empty means valid. */
-export function validateFlow(flow: FlowConfig, others: FlowConfig[]): string[] {
+export function validateFlow(flow: FlowConfig): string[] {
   const errors: string[] = [];
-
-  if (!/^[a-zA-Z0-9_-]+$/.test(flow.id)) {
-    errors.push("ID flow wajib, hanya huruf/angka/-/_.");
-  } else if (others.some((item) => item.id === flow.id)) {
-    errors.push(`ID flow "${flow.id}" sudah dipakai flow lain.`);
-  }
 
   if (flow.trigger.length === 0) {
     errors.push("Minimal satu trigger.");
@@ -35,10 +29,6 @@ export function validateFlow(flow: FlowConfig, others: FlowConfig[]): string[] {
 
   if (flow.steps.length === 0) {
     errors.push("Minimal satu step.");
-  }
-
-  if (flow.steps[0] && flow.steps[0].id.trim() === "") {
-    errors.push("Step pertama butuh ID: dipakai sebagai step awal flow.");
   }
 
   const stepIds = new Set<string>();
@@ -57,22 +47,31 @@ export function validateFlow(flow: FlowConfig, others: FlowConfig[]): string[] {
       (response.photo ?? "").trim() !== "" ||
       (response.text ?? "").trim() !== "";
     if (!hasContent) {
-      errors.push(
-        `Step "${id}" tidak punya isi response (text/photo/$expr).`,
-      );
+      errors.push(`Step "${id}" tidak punya isi response (text/photo/$expr).`);
     }
   }
 
   for (const step of flow.steps) {
-    const target = step.response.reply_markup?.inline_keyboard ?? [];
-    for (const row of target) {
+    const rows =
+      step.response.reply_markup?.inline_keyboard ??
+      step.response.reply_markup?.keyboard ??
+      [];
+
+    for (const row of rows) {
       for (const button of row) {
         if (button.text.trim() === "") {
           errors.push(`Step "${step.id}" punya tombol tanpa teks.`);
         }
-        if (!button.callback_data && !button.url) {
+        if (button.url) continue;
+
+        // A callback with no matching step leaves the user stuck on a dead button.
+        if (!button.callback_data) {
           errors.push(
             `Tombol "${button.text || "(kosong)"}" di step "${step.id}" butuh callback_data atau url.`,
+          );
+        } else if (!stepIds.has(button.callback_data)) {
+          errors.push(
+            `Tombol "${button.text || "(kosong)"}" di step "${step.id}" memanggil "${button.callback_data}", ID step itu tidak ada.`,
           );
         }
       }

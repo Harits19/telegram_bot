@@ -9,6 +9,8 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f mongodb",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

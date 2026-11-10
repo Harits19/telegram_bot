@@ -72,10 +72,11 @@ export function FlowEditor({
     <div className="editor">
       <header className="editor-head">
         <div>
-          <h1>{isNew ? "Flow baru" : flow.id || "(tanpa id)"}</h1>
+          <h1>{isNew ? "Flow baru" : `Flow ${flow.id.slice(-6)}`}</h1>
           <p className="muted small">
             {dirty ? "Belum disimpan" : savedAt ? `Tersimpan ${savedAt}` : "Tersimpan"}
             {errors.length > 0 ? ` · ${errors.length} masalah` : ""}
+            {isNew ? "" : ` · ${flow.id}`}
           </p>
         </div>
 
@@ -111,22 +112,6 @@ export function FlowEditor({
       )}
 
       <section className="card">
-        <div className="row">
-          <label className="field grow">
-            <span>ID flow</span>
-            <input
-              className="input mono"
-              value={flow.id}
-              placeholder="id-123"
-              disabled={!isNew}
-              onChange={(event) => patch({ id: event.target.value.trim() })}
-            />
-            <small className="muted">
-              Dipakai session sebagai `flowId`. Tidak bisa diubah setelah dibuat.
-            </small>
-          </label>
-        </div>
-
         <div className="field">
           <span>Trigger</span>
           <div className="chips">
@@ -157,7 +142,8 @@ export function FlowEditor({
             />
           </div>
           <small className="muted">
-            Pesan masuk dicocokkan case-insensitive ke daftar ini untuk memulai flow.
+            Pesan masuk harus sama persis dengan salah satu trigger (huruf kecil)
+            untuk memulai flow.
           </small>
         </div>
       </section>

@@ -1,32 +1,21 @@
-# React + TypeScript + Vite
+# Editor Flow Config
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Frontend untuk mengubah flow bot Telegram. Satu halaman: daftar flow di kiri,
+editor di kanan. Data diambil dan disimpan lewat `/api/flows` di proses bot, jadi
+tidak ada penyimpanan lokal di browser.
 
-Currently, two official plugins are available:
+Jalankan backend dulu (`npm run db:up && npm start` dari root repo), lalu:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+    npm run dev      # http://localhost:5173, proxy /api ke localhost:3000
+    npm run build    # hasil ke web/dist, ikut dilayani bot di :3000
+    npm run lint
 
-## React Compiler
+Catatan perilaku:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+- `id` flow dibuat backend (ObjectId). Flow baru dikirim lewat `POST`, flow yang
+  sudah ada lewat `PUT /api/flows/:id`.
+- Trigger harus sama persis dengan pesan masuk, huruf kecil.
+- Tombol inline dengan `callback_data` harus menunjuk ID step yang ada; bot
+  memakai nilai itu sebagai step tujuan.
+- Simpan diblokir selama validasi masih punya error; daftar error tampil di atas
+  editor.

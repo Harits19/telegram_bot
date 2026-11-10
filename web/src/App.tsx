@@ -17,32 +17,37 @@ export default function App() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
+  async function reload() {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      setFlows(await api.listFlows());
+    } catch (error) {
+      setLoadError((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
     api
       .listFlows()
       .then((list) => {
-        if (!active) return;
-        setFlows(list);
-        setLoading(false);
+        if (active) setFlows(list);
       })
       .catch((error: Error) => {
-        if (!active) return;
-        setLoadError(error.message);
-        setLoading(false);
+        if (active) setLoadError(error.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
     return () => {
       active = false;
     };
   }, []);
 
-  const errors = useMemo(() => {
-    if (!draft) return [];
-    const others = flows.filter((item) =>
-      originalId === null ? item.id !== draft.id : item.id !== originalId,
-    );
-    return validateFlow(draft, others);
-  }, [draft, flows, originalId]);
+  const errors = useMemo(() => (draft ? validateFlow(draft) : []), [draft]);
 
   function selectFlow(flow: FlowConfig) {
     if (dirty && !confirm("Perubahan belum disimpan. Buang?")) return;
@@ -89,7 +94,7 @@ export default function App() {
 
   async function remove() {
     if (!draft || originalId === null) return;
-    if (!confirm(`Hapus flow "${originalId}"? Tidak bisa dibatalkan.`)) return;
+    if (!confirm(`Hapus flow ini? ${draft.steps.length} step ikut terhapus.`)) return;
     setSaving(true);
     setActionError(null);
     try {
@@ -109,18 +114,22 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-dot" />
+          <span className="brand-dot" aria-hidden="true" />
           Flow Config
         </div>
 
-        <div className="mode-badge">
-          {api.mock ? "mock · localStorage" : "live · API"}
-        </div>
-
         {loading ? (
-          <p className="muted pad">Memuat…</p>
+          <p className="muted pad">Memuat flow…</p>
         ) : loadError ? (
-          <p className="error pad">{loadError}</p>
+          <div className="pad">
+            <p className="error">Gagal memuat flow: {loadError}</p>
+            <p className="muted small">
+              Pastikan backend jalan (<code>npm start</code>) dan MongoDB menyala.
+            </p>
+            <button className="btn" onClick={() => void reload()}>
+              Coba lagi
+            </button>
+          </div>
         ) : (
           <FlowList
             flows={flows}
@@ -156,8 +165,9 @@ export default function App() {
           <div className="empty-state">
             <h1>FlowConfig</h1>
             <p className="muted">
-              Pilih flow di kiri, atau buat flow baru. Semua perubahan di sini
-              disimpan ke repository flow di backend.
+              Pilih flow di kiri, atau buat flow baru. Setiap simpan langsung
+              menulis ke MongoDB lewat <code>/api/flows</code>, dan bot memakai
+              data yang sama saat pesan masuk.
             </p>
             <button className="btn primary" onClick={createFlow}>
               + Flow baru

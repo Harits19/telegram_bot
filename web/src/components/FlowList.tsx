@@ -46,9 +46,11 @@ export function FlowList({
                 className={`flow-item${flow.id === selectedId ? " active" : ""}`}
                 onClick={() => onSelect(flow)}
               >
-                <span className="flow-id">{flow.id}</span>
+                <span className="flow-id">
+                  {flow.trigger.join(", ") || "(tanpa trigger)"}
+                </span>
                 <span className="flow-meta">
-                  {flow.steps.length} step · {flow.trigger.join(", ") || "tanpa trigger"}
+                  {flow.steps.length} step · {flow.id.slice(-6)}
                 </span>
               </button>
             </li>
