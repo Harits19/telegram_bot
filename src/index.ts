@@ -1,10 +1,11 @@
 import { Logger } from "./config/logger.js";
+import { flowRepository } from "./flow/repository.js";
 import { flowService } from "./flow/service.js";
 import { mongoDB } from "./mongodb/service.js";
 import { telegramService } from "./telegram/service.js";
 import { UpdateInbound } from "./telegram/type.js";
 
-// Default di kode; bisa ditimpa dari .env.
+// Defaults live in code; override them from .env.
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
 const API_BASE = process.env.API_BASE ?? "https://api.telegram.org";
 
@@ -14,9 +15,7 @@ if (TOKEN === "") {
   );
 }
 
-/** Tombol: isi `callback_data` (dikirim balik ke bot) atau `url`. */
-
-/** Panggil satu method Bot API, kembalikan status dan body JSON-nya. */
+/** Call one Bot API method; returns its status and JSON body. */
 async function telegram(method: string, payload: Record<string, unknown>) {
   const response = await fetch(`${API_BASE}/bot${TOKEN}/${method}`, {
     method: "POST",
@@ -53,6 +52,7 @@ async function poll(): Promise<void> {
 
 async function main(): Promise<void> {
   await mongoDB.connect();
+  await flowRepository.initFlowConfig();
   await poll();
 }
 

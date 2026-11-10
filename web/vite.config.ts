@@ -5,8 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    // Backend admin API diasumsikan di :3000. Dengan proxy ini frontend tidak
-    // butuh CORS selama dev.
+    // The admin API is assumed on :3000; this proxy keeps the frontend free of
+    // CORS during dev.
     proxy: {
       "/api": {
         target: process.env.API_TARGET ?? "http://localhost:3000",

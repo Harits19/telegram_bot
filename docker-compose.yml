@@ -12,7 +12,7 @@ services:
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      # Ping tanpa kredensial cukup untuk cek proses mongod hidup.
+      # An unauthenticated ping is enough to prove mongod is alive.
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
       timeout: 5s

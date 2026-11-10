@@ -250,7 +250,7 @@ class FlowService {
     }
 
     const newSession: Session = {
-      flowId: flow.id,
+      flowId: flow._id.toString(),
       identifier,
       context: {},
       conversation: [],

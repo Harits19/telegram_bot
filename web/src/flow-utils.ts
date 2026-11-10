@@ -19,7 +19,7 @@ export function cloneFlow(flow: FlowConfig): FlowConfig {
   return structuredClone(flow);
 }
 
-/** Kesalahan yang menghalangi simpan. Kosong berarti valid. */
+/** Problems that block saving. Empty means valid. */
 export function validateFlow(flow: FlowConfig, others: FlowConfig[]): string[] {
   const errors: string[] = [];
 

@@ -1,5 +1,5 @@
-// Salinan tipe dari src/flow/type.ts + src/telegram/type.ts.
-// Backend adalah sumber kebenaran; kalau bentuknya berubah, ubah file ini juga.
+// Copy of the types in src/flow/type.ts + src/telegram/type.ts.
+// The backend is the source of truth; when a shape changes, update this file too.
 
 export type Button = {
   text: string;

@@ -22,7 +22,7 @@ export interface MessageOutboundRequest extends MessageOutbound {
   chatId: string;
 }
 
-// --- pesan masuk ---
+// Incoming messages
 
 export interface UserInbound {
   id: number;

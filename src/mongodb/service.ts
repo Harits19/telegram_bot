@@ -1,15 +1,8 @@
 import mongoose from "mongoose";
 import { Logger } from "../config/logger.js";
 
-const USER = process.env.MONGO_ROOT_USERNAME ?? "admin";
-const PASSWORD = process.env.MONGO_ROOT_PASSWORD ?? "admin123";
-const DATABASE = process.env.MONGO_DATABASE ?? "telegram_bot";
-const PORT = process.env.MONGO_PORT ?? "27017";
-
-/** URI bisa ditimpa langsung lewat MONGODB_URI (mis. ke Atlas). */
-const MONGODB_URI =
-  process.env.MONGODB_URI ??
-  `mongodb://${USER}:${PASSWORD}@localhost:${PORT}/${DATABASE}?authSource=admin`;
+/** MONGODB_URI overrides the whole connection string (e.g. an Atlas cluster). */
+const MONGODB_URI = process.env.MONGODB_URI;
 
 class MongoDB {
   logger = new Logger(this);
@@ -17,8 +10,15 @@ class MongoDB {
   async connect() {
     const logger = this.logger.nested(this.connect);
 
-    // Jangan buka koneksi kedua saat hot reload.
+    if (!MONGODB_URI) {
+      throw new Error(
+        "MONGODB_URI kosong: isi di .env (lihat contoh di .env.example)",
+      );
+    }
+
+    // Hot reload must not open a second connection.
     if (mongoose.connection.readyState !== 0) {
+      logger.info(`database "${mongoose.connection.name}" sudah tersambung`);
       return;
     }
 
@@ -26,9 +26,9 @@ class MongoDB {
       await mongoose.connect(MONGODB_URI, {
         serverSelectionTimeoutMS: 5000,
       });
-      logger.info(`tersambung ke database "${DATABASE}"`);
+      logger.info(`tersambung ke database "${mongoose.connection.name}"`);
     } catch (error) {
-      // Gagal konek = service tidak bisa jalan, jadi lempar ke pemanggil.
+      // Without a database the service cannot run, so the caller gets the error.
       logger.error("gagal tersambung", error);
       throw error;
     }

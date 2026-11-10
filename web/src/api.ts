@@ -1,7 +1,7 @@
 import type { FlowConfig } from "./types";
 
-// Default: mock (localStorage). Set VITE_USE_MOCK=false + VITE_API_BASE bila
-// backend admin API sudah siap.
+// Default: mock (localStorage). Set VITE_USE_MOCK=false + VITE_API_BASE once the
+// backend admin API is ready.
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== "false";
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
